@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+    - name: Install Deno
+      uses: denoland/setup-deno@v2
+      with:
+        deno-version: v2.x
+    - name: Install dependencie
+      run: deno install
+    - name: Build
+      run: deno task build
+    - uses: up9cloud/action-rsync@master
+      env:
+        HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+        TARGET: /home/${{ secrets.DEPLOY_SSH_USER }}/public_html/sveltean/
+        VERBOSE: true
+        USER: ${{ secrets.DEPLOY_SSH_USER }}
+        ARGS: --rsync-path=/home/${{ secrets.DEPLOY_SSH_USER }}/.local/bin/rsync
+        SOURCE: ./dist/*
+        PRE_SCRIPT: |
+          rm -rf /home/${{ secrets.DEPLOY_SSH_USER }}/public_html/sveltean
+          mkdir -p /home/${{ secrets.DEPLOY_SSH_USER }}/public_html/sveltean
+
